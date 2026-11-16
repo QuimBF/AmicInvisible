@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<meta name="theme-color" content="#0150c1" />
+<title>Amic Invisible</title>
+<link rel="preload" as="font" type="font/woff2" href="outfit.woff2" crossorigin />
+<link rel="preload" as="image" href="cel.webp" />
+<link rel="preload" as="image" href="capa-1.webp" />
+<link rel="preload" as="image" href="capa-2.webp" />
+<link rel="preload" as="image" href="capa-3.webp" />
+<style>
+  /* Outfit (OFL), self-hosted: only used for the revealed name. */
+  @font-face {
+    font-family: 'Outfit';
+    src: url('outfit.woff2') format('woff2');
+    font-weight: 100 900;
+    font-display: swap;
+  }
+
+  /* Shape rule: interactive elements are full pills, nothing else is boxed. */
+  :root {
+    --text: #f6f4ef;
+    --far-h: min(72dvh, 95vw);
+    --mid-h: min(56dvh, 74vw);
+    --near-h: min(42dvh, 55vw);
+    --slow: cubic-bezier(0.22, 1, 0.36, 1);
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: #0150c1;
+    color: var(--text);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  main {
+    position: relative;
+    height: 100vh; /* fallback for browsers without dvh */
+    height: 100dvh;
+    overflow: hidden;
+    /* Daytime sky photo; the solid colour is its top tone, shown while it loads. */
+    background: #0150c1 url('cel.webp') center / cover no-repeat;
+  }
+
+  /* z-order, back to front: far (1), name (2), mid (3), near (4), UI (5). */
+
+  /* ---- Landscape layers ------------------------------------------------ */
+  .layer {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .far { z-index: 1; height: var(--far-h); }
+  .mid { z-index: 3; height: var(--mid-h); }
+  .near { z-index: 4; height: var(--near-h); }
+
+  /* Each track is 4 (image, mirrored image) pairs, so the loop has no visible jump. */
+  .track {
+    display: flex;
+    height: 100%;
+    width: max-content;
+  }
+
+  .track i {
+    height: 100%;
+    aspect-ratio: 3 / 2;
+    background: var(--img) center bottom / 100% 100% no-repeat;
+  }
+
+  .track i:nth-child(even) { transform: scaleX(-1); }
+
+  /* ---- The name ---------------------------------------------------------- */
+  .name {
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--mid-h) * 0.62);
+    margin: 0;
+    text-align: center;
+    white-space: nowrap;
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: min(calc(150vw / var(--len, 6)), 30dvh);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: #fff8ef;
+    text-shadow: 0 0.05em 0.3em rgb(0 0 0 / 0.3);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(12%);
+  }
+
+  /* ---- UI: a single button, centred on the screen ------------------------ */
+  .ui {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+  }
+
+  .error {
+    max-width: 30ch;
+    margin: 0;
+    font-size: clamp(1.125rem, 4vw, 1.375rem);
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  [hidden] { display: none !important; }
+
+  /* Smooth frosted glass, Apple-style: one even translucent fill, no gloss band,
+     a hairline rim and a soft neutral shadow. Web approximation, not Apple's material. */
+  .glass {
+    min-height: 54px;
+    padding: 0 30px;
+    border: 1px solid rgb(255 255 255 / 0.32);
+    border-radius: 999px;
+    background: rgb(8 36 92 / 0.28);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    backdrop-filter: blur(28px) saturate(160%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 8px 24px rgb(0 0 0 / 0.14);
+    color: #fff;
+    font: inherit;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.2s var(--slow), background-color 0.2s;
+  }
+
+  @media (hover: hover) {
+    .glass:hover { background: rgb(8 36 92 / 0.38); }
+  }
+
+  .glass:active { transform: scale(0.96); }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .glass { background: #12408f; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  }
+
+  :focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 4px;
+  }
+
+  /* ---- Open state: the button steps aside and the name appears ------------ */
+  main[data-open] .ui { opacity: 0; visibility: hidden; }
+  main[data-open] .name { opacity: 1; transform: none; }
+  /* Far peaks dim a little so the white name reads over the snow. */
+  main[data-open] .far { filter: brightness(0.6); }
+
+  /* ---- Phones ------------------------------------------------------------ */
+  @media (max-aspect-ratio: 4/5) {
+    :root {
+      --far-h: 66dvh;
+      --mid-h: 50dvh;
+      --near-h: 36dvh;
+    }
+    .name { bottom: calc(var(--mid-h) * 0.82); }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* Ambient parallax: closer layers slide faster. */
+    .far .track { animation: scroll 220s linear infinite; }
+    .mid .track { animation: scroll 120s linear infinite; }
+    .near .track { animation: scroll 65s linear infinite; }
+
+    .ui { transition: opacity 0.35s, visibility 0.35s; }
+    .far { transition: filter 1s ease; }
+    .name { transition: opacity 0.9s ease, transform 1.2s var(--slow); }
+    main[data-open] .name { transition-delay: 0.2s; }
+  }
+
+  @keyframes scroll { to { transform: translateX(-25%); } }
+</style>
+</head>
+<body>
+<main id="escena">
+  <div class="layer far" aria-hidden="true" style="--img: url('capa-1.webp')"><div class="track"></div></div>
+  <h1 class="name" id="nom" aria-live="polite"></h1>
+  <div class="layer mid" aria-hidden="true" style="--img: url('capa-2.webp')"><div class="track"></div></div>
+  <div class="layer near" aria-hidden="true" style="--img: url('capa-3.webp')"><div class="track"></div></div>
+
+  <div class="ui">
+    <button type="button" class="glass" id="obre" hidden>Descobreix-ho</button>
+    <p class="error" id="ko" hidden>Aquest enllaç no porta cap codi vàlid. Demana'l de nou a qui organitza el sorteig.</p>
+    <noscript><p class="error">Activa el JavaScript per veure qui t'ha tocat.</p></noscript>
+  </div>
+</main>
+
+<script>
+  for (const track of document.querySelectorAll('.track')) track.innerHTML = '<i></i>'.repeat(8)
+
+  const PREFIX = 'Et toca fer el regal a: '
+
+  // The code is the last thing in the URL: #hex, ?hex / ?c=hex, or the last path segment.
+  function codiDeLaUrl() {
+    const { hash, search, pathname } = location
+    const candidats = [
+      hash.slice(1),
+      search.slice(1).split(/[&=]/).pop(),
+      pathname.split('/').filter(Boolean).pop(),
+    ]
+    return candidats.find((c) => c && c.length % 2 === 0 && /^[0-9a-f]+$/i.test(c)) || null
+  }
+
+  function desxifra(hex) {
+    const bytes = Uint8Array.from(hex.match(/../g), (b) => parseInt(b, 16))
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes).trim()
+    return text.startsWith(PREFIX) ? text.slice(PREFIX.length).trim() : text
+  }
+
+  let nom = null
+  try {
+    const codi = codiDeLaUrl()
+    nom = codi && desxifra(codi)
+  } catch {
+    nom = null
+  }
+
+  if (!nom) {
+    document.getElementById('ko').hidden = false
+  } else {
+    const escena = document.getElementById('escena')
+    const nomEl = document.getElementById('nom')
+    const obre = document.getElementById('obre')
+    obre.hidden = false
+    nomEl.style.setProperty('--len', Math.max(nom.length, 4))
+
+    // The name only enters the page on tap, so link previews and glances over the shoulder see nothing.
+    obre.addEventListener('click', () => {
+      nomEl.textContent = nom
+      escena.toggleAttribute('data-open', true)
+    })
+  }
+</script>
+</body>
+</html>

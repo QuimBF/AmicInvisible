@@ -1,0 +1,6 @@
+__pycache__/
+grups.json
+node_modules/
+_site/
+test-results/
+playwright-report/

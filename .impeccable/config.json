@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "marquee",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-16T17:44:38.482Z",
+        "reason": "Claude: the scrolling tracks are the parallax desert layers the user asked for (Railway-style movement), not a content marquee; reduced-motion disables them"
+      }
+    ]
+  }
+}

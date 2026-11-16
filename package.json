@@ -1,0 +1,12 @@
+{
+  "name": "amic-invisible",
+  "private": true,
+  "scripts": {
+    "e2e": "playwright test",
+    "lint:html": "html-validate index.html graf.html"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "html-validate": "^11.21.1"
+  }
+}

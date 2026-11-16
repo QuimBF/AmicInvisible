@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "e2e": "playwright test",
-    "lint:html": "html-validate index.html graf.html"
+    "lint:html": "html-validate index.html"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.1",

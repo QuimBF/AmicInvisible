@@ -26,6 +26,8 @@
     --far-h: min(72dvh, 95vw);
     --mid-h: min(56dvh, 74vw);
     --near-h: min(42dvh, 55vw);
+    /* How far the landscape extends below the screen edge, so its bottom border is never seen. */
+    --sink: 14dvh;
     --slow: cubic-bezier(0.22, 1, 0.36, 1);
     color-scheme: dark;
   }
@@ -34,8 +36,8 @@
 
   body {
     margin: 0;
-    /* Snow tone from the bottom of the photo, in case any strip below it shows. */
-    background: #8a93a3;
+    /* Snow white, in case Safari shows anything below the scene. */
+    background: #dfe5ec;
     color: var(--text);
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -66,15 +68,15 @@
   .layer {
     position: absolute;
     left: 0;
-    bottom: 0;
+    bottom: calc(-1 * var(--sink));
     width: 100%;
     overflow: hidden;
     pointer-events: none;
   }
 
-  .far { z-index: 1; height: var(--far-h); }
-  .mid { z-index: 3; height: var(--mid-h); }
-  .near { z-index: 4; height: var(--near-h); }
+  .far { z-index: 1; height: calc(var(--far-h) + var(--sink)); }
+  .mid { z-index: 3; height: calc(var(--mid-h) + var(--sink)); }
+  .near { z-index: 4; height: calc(var(--near-h) + var(--sink)); }
 
   /* Each track holds just enough (image, mirrored image) pairs to cover the screen after
      sliding one pair, so the loop has no jump and the layer stays small enough for phone GPUs. */
@@ -98,7 +100,7 @@
     z-index: 2;
     left: 0;
     right: 0;
-    bottom: calc(var(--mid-h) * 0.62);
+    bottom: calc(var(--mid-h) * 0.62 - var(--sink) * 0.4);
     margin: 0;
     text-align: center;
     white-space: nowrap;
@@ -187,7 +189,7 @@
     }
     /* Portrait: a two-word name may wrap, so size it by its longest word. */
     .name {
-      bottom: calc(var(--mid-h) * 0.82);
+      bottom: calc(var(--mid-h) * 0.82 - var(--sink) * 0.4);
       white-space: normal;
       text-wrap: balance;
       padding-inline: 12px;

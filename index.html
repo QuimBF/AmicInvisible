@@ -42,14 +42,17 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  /* The scene is pinned to the whole screen, including the strip behind Safari's
-     translucent toolbar and the home indicator (100lvh, not the visible 100dvh),
-     so the photo reaches the very bottom and the page cannot scroll. */
+  /* The scene fills the whole screen, including the strip behind Safari's translucent
+     toolbar (100lvh, not the visible 100dvh). It stays in normal flow on purpose:
+     iOS 26 Safari does not paint position: fixed content below its bottom bar.
+     The page itself never scrolls. */
+  html, body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   main {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    position: relative;
     height: 100vh; /* fallback for browsers without lvh */
     height: 100lvh;
     overflow: hidden;

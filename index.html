@@ -34,17 +34,24 @@
 
   body {
     margin: 0;
-    background: #0150c1;
+    /* Snow tone from the bottom of the photo, in case any strip below it shows. */
+    background: #8a93a3;
     color: var(--text);
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -webkit-text-size-adjust: 100%;
   }
 
+  /* The scene is pinned to the whole screen, including the strip behind Safari's
+     translucent toolbar and the home indicator (100lvh, not the visible 100dvh),
+     so the photo reaches the very bottom and the page cannot scroll. */
   main {
-    position: relative;
-    height: 100vh; /* fallback for browsers without dvh */
-    height: 100dvh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100vh; /* fallback for browsers without lvh */
+    height: 100lvh;
     overflow: hidden;
     /* Daytime sky photo; the solid colour is its top tone, shown while it loads. */
     background: #0150c1 url('cel.webp') center / cover no-repeat;

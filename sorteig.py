@@ -13,14 +13,25 @@ Qui organitza només veu el codi hex; cadascú el desxifra amb un convertidor
 """
 
 import argparse
+import hashlib
 import json
 import random
 import re
 import sys
+from urllib.parse import unquote
 
 PREFIX = "Et toca fer el regal a: "
 
 rng = random.SystemRandom()
+
+
+def xifra(qui: str, dades: bytes) -> bytes:
+    """XOR amb la SHA-256 del nom de qui regala; aplicat dos cops torna l'original.
+
+    ponytail: no és secret de debò (la clau va a l'enllaç); només evita llegir-ho d'un cop d'ull.
+    """
+    clau = hashlib.sha256(qui.encode()).digest()
+    return bytes(b ^ clau[i % len(clau)] for i, b in enumerate(dades))
 
 
 def carrega_grups(path: str) -> list[list[str]]:
@@ -83,13 +94,14 @@ def genera(grups: list[list[str]], url: str) -> str:
     llarg = max(len(n.encode()) for n in noms)
     blocs = []
     for qui in noms:
-        codi = (PREFIX.encode() + resultat[qui].encode().ljust(llarg)).hex()
-        blocs.append(f"--- {qui} ---\n{url}#{codi}\n")
+        codi = xifra(qui, PREFIX.encode() + resultat[qui].encode().ljust(llarg)).hex()
+        blocs.append(f"--- {qui} ---\n{url}#{qui.replace(' ', '_')}.{codi}\n")
     return "\n".join(blocs)
 
 
 def llegeix(sortida: str) -> list[tuple[str, str]]:
-    """Treu de la sortida les parelles (persona, codi): el codi va després del # de l'enllaç."""
+    """Treu de la sortida les parelles (persona, codi): el codi va després del # de l'enllaç,
+    en la forma nom-de-qui-regala.hex."""
     parelles = []
     for bloc in re.split(r"^--- (?=.+ ---$)", sortida, flags=re.MULTILINE)[1:]:
         cap, *resta = [s.strip() for s in bloc.splitlines() if s.strip()]
@@ -121,14 +133,18 @@ def verifica(sortida: str, grups: list[list[str]]) -> list[str]:
         errors.append("L'ordre de la sortida no és el dels grups i podria donar pistes del cicle.")
 
     # 3. Tots els codis fan la mateixa llargada: no es pot endevinar res per la mida.
-    if len({len(c) for c in codis}) != 1:
+    if len({len(c.rpartition(".")[2]) for c in codis}) != 1:
         errors.append("Els codis no fan tots la mateixa llargada.")
 
-    # 4. Cada codi és hex vàlid, es desxifra i conté un nom conegut.
+    # 4. Cada codi porta el nom de qui regala, és hex vàlid, es desxifra i conté un nom conegut.
     resultat: dict[str, str] = {}
     for qui, codi in zip(qui_dona, codis, strict=True):
+        nom, _, codi = codi.rpartition(".")
+        if unquote(nom).replace("_", " ") != qui:
+            errors.append(f"L'enllaç de {qui} no porta el seu nom.")
+            continue
         try:
-            text = bytes.fromhex(codi).decode()
+            text = xifra(qui, bytes.fromhex(codi)).decode()
         except ValueError:
             errors.append(f"El codi de {qui} no és hexadecimal UTF-8 vàlid.")
             continue

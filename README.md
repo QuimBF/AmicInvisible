@@ -85,11 +85,12 @@ Si cap grup no té més de la meitat de les persones, sempre n'hi ha; si no, l's
 
 ### L'enllaç
 
-Per a cada persona, el text `Et toca fer el regal a: <nom>` es passa a **hexadecimal** i va
-darrere del `#` de l'URL. El nom s'omple amb espais perquè tots els codis facin la mateixa
-llargada i no se'n pugui endevinar cap per la mida. El navegador no envia mai al servidor el que
-va darrere del `#`: la pàgina el llegeix i el desxifra al mòbil de qui l'obre. Qui organitza
-envia els enllaços sense veure qui ha tocat a qui.
+L'enllaç és `url#<nom_de_qui_regala>.<codi>` (amb `_` en lloc d'espais). El nom de qui regala va en clar, perquè qui organitza
+sàpiga a qui enviar cada enllaç, i la pàgina el saluda amb "Ets <nom>". El codi és el text
+`Et toca fer el regal a: <nom>` amb una XOR contra la SHA-256 del nom de qui regala, en hexadecimal.
+No és secret de debò (la clau és a l'enllaç), però no es llegeix d'un cop d'ull. El nom s'omple amb
+espais perquè tots els codis facin la mateixa llargada. El navegador no envia mai al servidor el que
+va darrere del `#`: la pàgina el desxifra al mòbil de qui l'obre.
 
 ### Verificació
 

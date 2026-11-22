@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test')
 const { execFileSync } = require('node:child_process')
 const { readFileSync } = require('node:fs')
+const { createHash } = require('node:crypto')
 
 const PREFIX = 'Et toca fer el regal a: '
 const ERROR = 'Aquest enllaç no porta cap codi vàlid'
@@ -8,9 +9,16 @@ const NAMES = JSON.parse(readFileSync('grups.example.json', 'utf8')).flat()
 
 const out = execFileSync('python3', ['sorteig.py', 'http://127.0.0.1:4173/', '--grups', 'grups.example.json'], { encoding: 'utf8' })
 const links = [...out.matchAll(/^--- (.+) ---\n(\S+)$/gm)].map(([, giver, url]) => {
-  const text = Buffer.from(url.split('#')[1], 'hex').toString('utf8')
+  const [qui, hex] = url.split('#')[1].replaceAll('_', ' ').split(/\.(?=[0-9a-f]+$)/)
+  const text = xifra(qui, Buffer.from(hex, 'hex')).toString('utf8')
   return { giver, url, receiver: text.slice(PREFIX.length).trimEnd() }
 })
+
+function xifra(qui, bytes) {
+  const clau = createHash('sha256').update(qui).digest()
+  return bytes.map((b, i) => b ^ clau[i % clau.length])
+}
+const enllac = (qui, nom) => `/#${qui.replaceAll(' ', '_')}.${xifra(qui, Buffer.from(PREFIX + nom)).toString('hex')}`
 
 test('every example person gets a link', () => {
   expect(links.map((l) => l.giver).sort()).toEqual([...NAMES].sort())
@@ -23,9 +31,10 @@ for (const { giver, url, receiver } of links) {
     const button = page.getByRole('button', { name: 'Descobreix-ho' })
 
     await expect(button).toBeVisible()
+    await expect(page.getByText(`Ets ${giver}`)).toBeVisible()
     await expect(name).toBeEmpty()
     const before = await page.locator('body').innerText()
-    for (const n of NAMES) expect(before).not.toContain(n)
+    expect(before).not.toContain(receiver)
 
     // Centred-ish: button centre within 15% of the viewport centre on both axes.
     const box = await button.boundingBox()
@@ -41,7 +50,7 @@ for (const { giver, url, receiver } of links) {
   })
 }
 
-for (const [label, path] of [['invalid hash', '/#zz'], ['missing hash', '/']]) {
+for (const [label, path] of [['invalid hash', '/#Anna.zz'], ['plain hex', '/#' + Buffer.from(PREFIX + 'Pere').toString('hex')], ['missing hash', '/']]) {
   test(`${label} shows the error`, async ({ page }) => {
     await page.goto(path)
     await expect(page.getByText(ERROR)).toBeVisible()
@@ -66,7 +75,7 @@ test.describe('reduced motion', () => {
 })
 
 test('everyone is told it is one gift, one budget', async ({ page }) => {
-  await page.goto('/#' + Buffer.from(PREFIX + 'Pere').toString('hex'))
+  await page.goto(enllac('Pere i Rosa', 'Martí'))
   await page.getByRole('button', { name: 'Descobreix-ho' }).click()
   await expect(page.locator('#nom small')).toContainText('un sol regal')
 })

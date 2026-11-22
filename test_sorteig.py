@@ -2,12 +2,13 @@
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
 import unittest
 
-from sorteig import PREFIX, carrega_grups, cicle_hamiltonia, genera, llegeix, verifica
+from sorteig import PREFIX, carrega_grups, cicle_hamiltonia, genera, llegeix, verifica, xifra
 
 URL = "https://exemple.test/"
 EXEMPLE = "grups.example.json"
@@ -21,13 +22,16 @@ def sortida_de(resultat: dict[str, str], ordre: list[str] = NOMS, llarg: int = L
     """Construeix una sortida amb el mateix format que sorteig.py a partir d'un repartiment."""
     blocs = []
     for qui in ordre:
-        codi = (PREFIX + resultat[qui]).encode().ljust(len(PREFIX) + llarg).hex()
-        blocs.append(f"--- {qui} ---\n{URL}#{codi}\n")
+        codi = xifra(qui, (PREFIX + resultat[qui]).encode().ljust(len(PREFIX) + llarg)).hex()
+        blocs.append(f"--- {qui} ---\n{URL}#{qui.replace(' ', '_')}.{codi}\n")
     return "\n".join(blocs)
 
 
 def desxifra(sortida: str) -> dict[str, str]:
-    return {q: bytes.fromhex(c).decode()[len(PREFIX) :].rstrip() for q, c in llegeix(sortida)}
+    return {
+        q: xifra(q, bytes.fromhex(c.rpartition(".")[2])).decode()[len(PREFIX) :].rstrip()
+        for q, c in llegeix(sortida)
+    }
 
 
 # Un cicle vàlid fix per construir casos trencats a partir d'ell.
@@ -61,7 +65,7 @@ class SortidaReal(unittest.TestCase):
     def test_codis_mateixa_llargada_i_ordre_fix(self):
         parelles = llegeix(genera(GRUPS, URL))
         self.assertEqual([q for q, _ in parelles], NOMS)
-        self.assertEqual(len({len(c) for _, c in parelles}), 1)
+        self.assertEqual(len({len(c.rpartition(".")[2]) for _, c in parelles}), 1)
 
     def test_cada_bloc_es_un_missatge_complet(self):
         blocs = genera(GRUPS, URL).split("--- ")[1:]
@@ -69,7 +73,9 @@ class SortidaReal(unittest.TestCase):
         for bloc in blocs:
             enllac = bloc.strip().splitlines()[-1]
             self.assertTrue(enllac.startswith(URL + "#"), enllac)
-            bytes.fromhex(enllac.removeprefix(URL + "#")).decode()  # el codi és hex vàlid
+            nom, _, codi = enllac.removeprefix(URL + "#").rpartition(".")
+            bytes.fromhex(codi)  # el codi és hex vàlid
+            self.assertNotIn(PREFIX.encode().hex(), codi)  # i no és el text en clar
 
     def test_es_aleatori(self):
         resultats = [desxifra(genera(GRUPS, URL)) for _ in range(300)]
@@ -175,11 +181,13 @@ class VerificadorDetectaErrors(unittest.TestCase):
         self.assert_error(sortida_de(BO | {"Anna": "Pep"}), "no és de cap grup")
 
     def test_codi_no_hex(self):
-        self.assert_error(sortida_de(BO).replace("4574", "zz74", 1), "hexadecimal")
+        self.assert_error(re.sub(r"#Anna\...", "#Anna.zz", sortida_de(BO)), "hexadecimal")
+
+    def test_enllac_amb_un_altre_nom(self):
+        self.assert_error(sortida_de(BO).replace("#Anna.", "#Pau.", 1), "no porta el seu nom")
 
     def test_codis_de_llargada_diferent(self):
-        s = sortida_de(BO)
-        self.assert_error(s.replace("20\n", "\n", 1), "mateixa llargada")
+        self.assert_error(re.sub(r"(#Anna\.\w+)..\n", r"\1\n", sortida_de(BO)), "mateixa llargada")
 
     def test_ordre_del_cicle_dona_pistes(self):
         self.assert_error(sortida_de(BO, ordre=CICLE_BO), "ordre")

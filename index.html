@@ -142,6 +142,17 @@
     text-align: center;
   }
 
+  .porta { display: grid; justify-items: center; gap: 16px; }
+  .ets {
+    margin: 0;
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: clamp(1.5rem, 7vw, 2.5rem);
+    font-weight: 700;
+    color: #fff8ef;
+    text-shadow: 0 0.05em 0.3em rgb(0 0 0 / 0.3);
+    text-align: center;
+  }
+
   [hidden] { display: none !important; }
 
   /* Smooth frosted glass, Apple-style: one even translucent fill, no gloss band,
@@ -230,13 +241,16 @@
   <div class="layer near" aria-hidden="true" style="--img: url('capa-3.webp')"><div class="track"></div></div>
 
   <div class="ui">
+    <div class="porta">
+    <p class="ets" id="ets" hidden></p>
     <button type="button" class="glass" id="obre" hidden>Descobreix-ho</button>
+    </div>
     <p class="error" id="ko" hidden>Aquest enllaç no porta cap codi vàlid. Demana'l de nou a qui organitza el sorteig.</p>
     <noscript><p class="error">Activa el JavaScript per veure qui t'ha tocat.</p></noscript>
   </div>
 </main>
 
-<script>
+<script type="module">
   // Fill each track with the fewest (image, mirror) pairs that still cover the screen
   // after one pair has slid past. Recomputed on resize (rotation, address bar).
   function omplePistes() {
@@ -252,27 +266,21 @@
 
   const PREFIX = 'Et toca fer el regal a: '
 
-  // The code is the last thing in the URL: #hex, ?hex / ?c=hex, or the last path segment.
-  function codiDeLaUrl() {
-    const { hash, search, pathname } = location
-    const candidats = [
-      hash.slice(1),
-      search.slice(1).split(/[&=]/).pop(),
-      pathname.split('/').filter(Boolean).pop(),
-    ]
-    return candidats.find((c) => c && c.length % 2 === 0 && /^[0-9a-f]+$/i.test(c)) || null
+  // The link is #<giver, spaces as _>.<hex>: the hex is the message XOR-ed with SHA-256(giver), as in sorteig.py.
+  async function llegeixUrl() {
+    const m = location.hash.match(/^#(.+)\.([0-9a-f]+)$/i)
+    if (!m || m[2].length % 2) return null
+    const qui = decodeURIComponent(m[1]).replaceAll('_', ' ')
+    const clau = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(qui)))
+    const bytes = Uint8Array.from(m[2].match(/../g), (b, i) => parseInt(b, 16) ^ clau[i % clau.length])
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+    return text.startsWith(PREFIX) ? { qui, nom: text.slice(PREFIX.length).trim() } : null
   }
 
-  function desxifra(hex) {
-    const bytes = Uint8Array.from(hex.match(/../g), (b) => parseInt(b, 16))
-    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes).trim()
-    return text.startsWith(PREFIX) ? text.slice(PREFIX.length).trim() : text
-  }
-
+  let qui = null
   let nom = null
   try {
-    const codi = codiDeLaUrl()
-    nom = codi && desxifra(codi)
+    ;({ qui, nom } = (await llegeixUrl()) || {})
   } catch {
     nom = null
   }
@@ -284,6 +292,9 @@
     const nomEl = document.getElementById('nom')
     const obre = document.getElementById('obre')
     obre.hidden = false
+    const ets = document.getElementById('ets')
+    ets.textContent = `Ets ${qui}`
+    ets.hidden = false
     nomEl.style.setProperty('--len', Math.max(nom.length, 4))
     nomEl.style.setProperty('--word', Math.max(...nom.split(/\s+/).map((w) => w.length), 4))
 

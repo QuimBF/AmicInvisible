@@ -115,6 +115,14 @@
     opacity: 0;
     transform: translateY(12%);
   }
+  .name small {
+    display: block;
+    margin-bottom: 0.6em;
+    font-size: clamp(16px, 4.5vw, 24px);
+    font-weight: 500;
+    letter-spacing: 0;
+    white-space: normal;
+  }
 
   /* ---- UI: a single button, centred on the screen ------------------------ */
   .ui {
@@ -282,6 +290,10 @@
     // The name only enters the page on tap, so link previews and glances over the shoulder see nothing.
     obre.addEventListener('click', () => {
       nomEl.textContent = nom
+      // Everyone sees the couple rule, so the note never hints at who got whom.
+      const nota = document.createElement('small')
+      nota.textContent = 'Si et toca una parella, compten com una sola persona: un sol regal, amb el mateix pressupost.'
+      nomEl.prepend(nota)
       escena.toggleAttribute('data-open', true)
     })
   }

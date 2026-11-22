@@ -35,7 +35,7 @@ for (const { giver, url, receiver } of links) {
 
     await button.click()
     await expect(name).toBeVisible()
-    await expect(name).toHaveText(receiver)
+    await expect(name).toContainText(receiver)
     expect(NAMES).toContain(receiver)
     expect(receiver).not.toBe(giver)
   })
@@ -63,4 +63,10 @@ test.describe('reduced motion', () => {
     await page.getByRole('button', { name: 'Descobreix-ho' }).click()
     expect(await page.locator('#nom').evaluate((el) => getComputedStyle(el).opacity)).toBe('1')
   })
+})
+
+test('everyone is told it is one gift, one budget', async ({ page }) => {
+  await page.goto('/#' + Buffer.from(PREFIX + 'Pere').toString('hex'))
+  await page.getByRole('button', { name: 'Descobreix-ho' }).click()
+  await expect(page.locator('#nom small')).toContainText('un sol regal')
 })
